@@ -4,7 +4,6 @@
 //! This version provides a web interface.
 
 use axum::{
-    extract::State,
     response::{Html, IntoResponse},
     routing::get,
     Router,
@@ -50,13 +49,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = Router::new()
         .route("/", get(index_handler))
         .route("/api/queues", get(api::get_queues))
-        .route("/api/queue/:name", get(api::get_queue_info))
+        .route("/api/queue/{name}", get(api::get_queue_info))
         .route("/api/servers", get(api::get_servers))
-        .route("/api/tasks/:queue/:state", get(api::get_tasks))
+        .route("/api/tasks/{queue}/{state}", get(api::get_tasks))
         .route("/api/connect", axum::routing::post(api::connect))
-        .route("/api/pause/:queue", axum::routing::post(api::pause_queue))
+        .route("/api/pause/{queue}", axum::routing::post(api::pause_queue))
         .route(
-            "/api/unpause/:queue",
+            "/api/unpause/{queue}",
             axum::routing::post(api::unpause_queue),
         )
         .with_state(state);
