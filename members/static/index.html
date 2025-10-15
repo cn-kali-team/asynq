@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asynq Members - Task Control Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .header-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .connection-dialog {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            max-width: 500px;
+            margin: 2rem auto;
+        }
+
+        .connection-dialog h2 {
+            margin: 0 0 1.5rem 0;
+            color: #333;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        .error-message {
+            background: #fee;
+            color: #c33;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .toolbar h2 {
+            margin: 0;
+            color: #333;
+            font-size: 1.5rem;
+        }
+
+        .section {
+            margin-bottom: 2rem;
+        }
+
+        .section h3 {
+            margin: 0 0 1rem 0;
+            color: #333;
+            font-size: 1.25rem;
+        }
+
+        .grid {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            border: 2px solid #f0f0f0;
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .card-header h4 {
+            margin: 0;
+            color: #333;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-active {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .badge-paused {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .stat-blue { color: #3b82f6; }
+        .stat-green { color: #10b981; }
+        .stat-orange { color: #f59e0b; }
+        .stat-red { color: #ef4444; }
+        .stat-purple { color: #6366f1; }
+
+        .divider {
+            border-top: 1px solid #f0f0f0;
+            margin: 1rem 0;
+            padding-top: 1rem;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-green {
+            background: #10b981;
+        }
+
+        .btn-orange {
+            background: #f59e0b;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead tr {
+            background: #f9fafb;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        th {
+            padding: 0.75rem;
+            text-align: left;
+            font-weight: 600;
+            color: #374151;
+            font-size: 0.875rem;
+        }
+
+        td {
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: #999;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="header-title">
+                <h1>🔧 Asynq Members</h1>
+                <div class="header-badge">Task Control Panel</div>
+            </div>
+            <div style="font-size: 0.9rem; opacity: 0.9;">Powered by Rust + Axum</div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Connection Dialog -->
+        <div id="connectionDialog" class="connection-dialog">
+            <h2>🔌 Connect to Redis</h2>
+            <div id="connectionError" class="error-message hidden"></div>
+            <div class="form-group">
+                <label>Redis URL</label>
+                <input type="text" id="redisUrl" value="redis://127.0.0.1:6379" placeholder="redis://127.0.0.1:6379">
+            </div>
+            <button class="btn btn-full" onclick="connect()">Connect</button>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard" class="hidden">
+            <div class="toolbar">
+                <h2>📊 Dashboard</h2>
+                <button class="btn" onclick="refreshData()">🔄 Refresh</button>
+            </div>
+
+            <div id="dashboardError" class="error-message hidden"></div>
+
+            <!-- Servers Section -->
+            <div class="section">
+                <h3 id="serversTitle">🖥️ Servers</h3>
+                <div id="serversGrid" class="grid grid-2"></div>
+            </div>
+
+            <!-- Queues Section -->
+            <div class="section">
+                <h3 id="queuesTitle">📦 Queues</h3>
+                <div id="queuesGrid" class="grid grid-3"></div>
+            </div>
+
+            <!-- Tasks Section -->
+            <div class="section">
+                <h3 id="tasksTitle">📋 Tasks</h3>
+                <div class="grid grid-2">
+                    <div class="card">
+                        <h4>⏳ Pending Tasks</h4>
+                        <div id="pendingTasks"></div>
+                    </div>
+                    <div class="card">
+                        <h4>▶️ Active Tasks</h4>
+                        <div id="activeTasks"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentQueue = 'default';
+        let isConnected = false;
+
+        async function connect() {
+            const redisUrl = document.getElementById('redisUrl').value;
+            const errorDiv = document.getElementById('connectionError');
+            
+            errorDiv.classList.add('hidden');
+            
+            try {
+                const response = await fetch('/api/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ redis_url: redisUrl })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    isConnected = true;
+                    document.getElementById('connectionDialog').classList.add('hidden');
+                    document.getElementById('dashboard').classList.remove('hidden');
+                    await refreshData();
+                } else {
+                    errorDiv.textContent = '❌ ' + (data.error || 'Connection failed');
+                    errorDiv.classList.remove('hidden');
+                }
+            } catch (error) {
+                errorDiv.textContent = '❌ Connection failed: ' + error.message;
+                errorDiv.classList.remove('hidden');
+            }
+        }
+
+        async function refreshData() {
+            if (!isConnected) return;
+            
+            try {
+                await loadServers();
+                await loadQueues();
+                if (currentQueue) {
+                    await loadTasks(currentQueue);
+                }
+            } catch (error) {
+                console.error('Error refreshing data:', error);
+            }
+        }
+
+        async function loadServers() {
+            const response = await fetch('/api/servers');
+            const data = await response.json();
+            
+            if (data.success && data.data) {
+                const servers = data.data;
+                document.getElementById('serversTitle').textContent = `🖥️ Servers (${servers.length})`;
+                
+                const grid = document.getElementById('serversGrid');
+                grid.innerHTML = servers.map(server => `
+                    <div class="card">
+                        <div class="card-header">
+                            <h4>🖥️ ${server.server_id}</h4>
+                        </div>
+                        <div style="color: #666; font-size: 0.9rem; margin-bottom: 1rem;">
+                            Host: ${server.host}:${server.pid}
+                        </div>
+                        <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr);">
+                            <div class="stat">
+                                <div class="stat-label">Status</div>
+                                <div class="stat-value stat-green">${server.status}</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Concurrency</div>
+                                <div class="stat-value stat-blue">${server.concurrency}</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Active Workers</div>
+                                <div class="stat-value stat-orange">${server.active_worker_count}</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Strict Priority</div>
+                                <div class="stat-value stat-purple">${server.strict_priority ? '✓ Yes' : '✗ No'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function loadQueues() {
+            const response = await fetch('/api/queues');
+            const data = await response.json();
+            
+            if (data.success && data.data) {
+                const queues = data.data;
+                document.getElementById('queuesTitle').textContent = `📦 Queues (${queues.length})`;
+                
+                if (queues.length > 0 && !currentQueue) {
+                    currentQueue = queues[0];
+                }
+                
+                const grid = document.getElementById('queuesGrid');
+                const queueCards = await Promise.all(queues.map(async queueName => {
+                    const infoResponse = await fetch(`/api/queue/${queueName}`);
+                    const infoData = await infoResponse.json();
+                    
+                    if (infoData.success && infoData.data) {
+                        const info = infoData.data;
+                        return `
+                            <div class="card">
+                                <div class="card-header">
+                                    <h4>📦 ${queueName}</h4>
+                                    <span class="badge ${info.paused ? 'badge-paused' : 'badge-active'}">
+                                        ${info.paused ? '⏸️ PAUSED' : '▶️ ACTIVE'}
+                                    </span>
+                                </div>
+                                <div class="stats-grid">
+                                    <div class="stat">
+                                        <div class="stat-value stat-blue">${info.pending}</div>
+                                        <div class="stat-label">Pending</div>
+                                    </div>
+                                    <div class="stat">
+                                        <div class="stat-value stat-green">${info.active}</div>
+                                        <div class="stat-label">Active</div>
+                                    </div>
+                                    <div class="stat">
+                                        <div class="stat-value stat-orange">${info.scheduled}</div>
+                                        <div class="stat-label">Scheduled</div>
+                                    </div>
+                                </div>
+                                <div class="stats-grid divider">
+                                    <div class="stat">
+                                        <div class="stat-value stat-red">${info.retry}</div>
+                                        <div class="stat-label">Retry</div>
+                                    </div>
+                                    <div class="stat">
+                                        <div class="stat-value stat-purple">${info.archived}</div>
+                                        <div class="stat-label">Archived</div>
+                                    </div>
+                                    <div class="stat">
+                                        <div class="stat-value stat-green">${info.completed}</div>
+                                        <div class="stat-label">Completed</div>
+                                    </div>
+                                </div>
+                                <div class="card-actions">
+                                    ${info.paused ? 
+                                        `<button class="btn btn-sm btn-green" onclick="unpauseQueue('${queueName}')">▶️ Resume</button>` :
+                                        `<button class="btn btn-sm btn-orange" onclick="pauseQueue('${queueName}')">⏸️ Pause</button>`
+                                    }
+                                </div>
+                            </div>
+                        `;
+                    }
+                    return '';
+                }));
+                
+                grid.innerHTML = queueCards.join('');
+            }
+        }
+
+        async function loadTasks(queue) {
+            currentQueue = queue;
+            document.getElementById('tasksTitle').textContent = `📋 Tasks for Queue: ${queue}`;
+            
+            // Load pending tasks
+            const pendingResponse = await fetch(`/api/tasks/${queue}/pending`);
+            const pendingData = await pendingResponse.json();
+            
+            const pendingDiv = document.getElementById('pendingTasks');
+            if (pendingData.success && pendingData.data && pendingData.data.length > 0) {
+                pendingDiv.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Type</th>
+                                <th>Retry</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${pendingData.data.map(task => `
+                                <tr>
+                                    <td style="font-family: monospace;">${task.id.substring(0, 8)}...</td>
+                                    <td style="font-weight: 500; color: #374151;">${task.task_type}</td>
+                                    <td style="text-align: center;">${task.retried}/${task.max_retry}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else {
+                pendingDiv.innerHTML = '<div class="empty-state">No pending tasks</div>';
+            }
+            
+            // Load active tasks
+            const activeResponse = await fetch(`/api/tasks/${queue}/active`);
+            const activeData = await activeResponse.json();
+            
+            const activeDiv = document.getElementById('activeTasks');
+            if (activeData.success && activeData.data && activeData.data.length > 0) {
+                activeDiv.innerHTML = `
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Type</th>
+                                <th>Retry</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${activeData.data.map(task => `
+                                <tr>
+                                    <td style="font-family: monospace;">${task.id.substring(0, 8)}...</td>
+                                    <td style="font-weight: 500; color: #374151;">${task.task_type}</td>
+                                    <td style="text-align: center;">${task.retried}/${task.max_retry}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else {
+                activeDiv.innerHTML = '<div class="empty-state">No active tasks</div>';
+            }
+        }
+
+        async function pauseQueue(queue) {
+            const response = await fetch(`/api/pause/${queue}`, { method: 'POST' });
+            const data = await response.json();
+            
+            if (data.success) {
+                await refreshData();
+            }
+        }
+
+        async function unpauseQueue(queue) {
+            const response = await fetch(`/api/unpause/${queue}`, { method: 'POST' });
+            const data = await response.json();
+            
+            if (data.success) {
+                await refreshData();
+            }
+        }
+
+        // Auto-refresh every 5 seconds
+        setInterval(() => {
+            if (isConnected) {
+                refreshData();
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
