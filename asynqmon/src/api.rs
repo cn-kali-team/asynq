@@ -1,11 +1,6 @@
 //! API handlers for the web interface
 
-use axum::{
-    extract::{Path, State},
-    http::StatusCode,
-    response::IntoResponse,
-    Json,
-};
+use actix_web::{web, HttpResponse, Result};
 use asynq::base::keys::TaskState;
 use serde::{Deserialize, Serialize};
 
@@ -91,68 +86,55 @@ impl From<asynq::proto::ServerInfo> for ServerInfoResponse {
 
 /// Connect to Redis
 pub async fn connect(
-    State(state): State<AppState>,
-    Json(req): Json<ConnectRequest>,
-) -> impl IntoResponse {
-    match state.inspector.initialize(req.redis_url).await {
-        Ok(_) => (
-            StatusCode::OK,
-            Json(ApiResponse::success("Connected".to_string())),
-        ),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<String>::error(e)),
-        ),
+    state: web::Data<AppState>,
+    req: web::Json<ConnectRequest>,
+) -> Result<HttpResponse> {
+    match state.inspector.initialize(req.redis_url.clone()).await {
+        Ok(_) => Ok(HttpResponse::Ok().json(ApiResponse::success("Connected".to_string()))),
+        Err(e) => Ok(HttpResponse::InternalServerError().json(ApiResponse::<String>::error(e))),
     }
 }
 
 /// Get all queues
-pub async fn get_queues(State(state): State<AppState>) -> impl IntoResponse {
+pub async fn get_queues(state: web::Data<AppState>) -> Result<HttpResponse> {
     match state.inspector.get_queues().await {
-        Ok(queues) => (StatusCode::OK, Json(ApiResponse::success(queues))),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<Vec<String>>::error(e)),
-        ),
+        Ok(queues) => Ok(HttpResponse::Ok().json(ApiResponse::success(queues))),
+        Err(e) => Ok(HttpResponse::InternalServerError().json(ApiResponse::<Vec<String>>::error(e))),
     }
 }
 
 /// Get queue information
 pub async fn get_queue_info(
-    State(state): State<AppState>,
-    Path(name): Path<String>,
-) -> impl IntoResponse {
+    state: web::Data<AppState>,
+    path: web::Path<String>,
+) -> Result<HttpResponse> {
     use asynq::task::QueueInfo;
     
-    match state.inspector.get_queue_info(&name).await {
-        Ok(info) => (StatusCode::OK, Json(ApiResponse::success(info))),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<QueueInfo>::error(e)),
-        ),
+    match state.inspector.get_queue_info(&path).await {
+        Ok(info) => Ok(HttpResponse::Ok().json(ApiResponse::success(info))),
+        Err(e) => Ok(HttpResponse::InternalServerError().json(ApiResponse::<QueueInfo>::error(e))),
     }
 }
 
 /// Get server information
-pub async fn get_servers(State(state): State<AppState>) -> impl IntoResponse {
+pub async fn get_servers(state: web::Data<AppState>) -> Result<HttpResponse> {
     match state.inspector.get_servers().await {
         Ok(servers) => {
             let response_servers: Vec<ServerInfoResponse> =
                 servers.into_iter().map(|s| s.into()).collect();
-            (StatusCode::OK, Json(ApiResponse::success(response_servers)))
+            Ok(HttpResponse::Ok().json(ApiResponse::success(response_servers)))
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<Vec<ServerInfoResponse>>::error(e)),
-        ),
+        Err(e) => Ok(HttpResponse::InternalServerError().json(ApiResponse::<Vec<ServerInfoResponse>>::error(e))),
     }
 }
 
 /// Get tasks by queue and state
 pub async fn get_tasks(
-    State(state): State<AppState>,
-    Path((queue, state_str)): Path<(String, String)>,
-) -> impl IntoResponse {
+    state: web::Data<AppState>,
+    path: web::Path<(String, String)>,
+) -> Result<HttpResponse> {
+    let (queue, state_str) = path.into_inner();
+    
     let task_state = match state_str.as_str() {
         "pending" => TaskState::Pending,
         "active" => TaskState::Active,
@@ -161,12 +143,9 @@ pub async fn get_tasks(
         "archived" => TaskState::Archived,
         "completed" => TaskState::Completed,
         _ => {
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(ApiResponse::<Vec<TaskInfoResponse>>::error(
-                    "Invalid task state".to_string(),
-                )),
-            )
+            return Ok(HttpResponse::BadRequest().json(ApiResponse::<Vec<TaskInfoResponse>>::error(
+                "Invalid task state".to_string(),
+            )))
         }
     };
 
@@ -174,45 +153,30 @@ pub async fn get_tasks(
         Ok(tasks) => {
             let response_tasks: Vec<TaskInfoResponse> =
                 tasks.into_iter().map(|t| t.into()).collect();
-            (StatusCode::OK, Json(ApiResponse::success(response_tasks)))
+            Ok(HttpResponse::Ok().json(ApiResponse::success(response_tasks)))
         }
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<Vec<TaskInfoResponse>>::error(e)),
-        ),
+        Err(e) => Ok(HttpResponse::InternalServerError().json(ApiResponse::<Vec<TaskInfoResponse>>::error(e))),
     }
 }
 
 /// Pause a queue
 pub async fn pause_queue(
-    State(state): State<AppState>,
-    Path(queue): Path<String>,
-) -> impl IntoResponse {
-    match state.inspector.pause_queue(&queue).await {
-        Ok(_) => (
-            StatusCode::OK,
-            Json(ApiResponse::success("Paused".to_string())),
-        ),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<String>::error(e)),
-        ),
+    state: web::Data<AppState>,
+    path: web::Path<String>,
+) -> Result<HttpResponse> {
+    match state.inspector.pause_queue(&path).await {
+        Ok(_) => Ok(HttpResponse::Ok().json(ApiResponse::success("Paused".to_string()))),
+        Err(e) => Ok(HttpResponse::InternalServerError().json(ApiResponse::<String>::error(e))),
     }
 }
 
 /// Unpause a queue
 pub async fn unpause_queue(
-    State(state): State<AppState>,
-    Path(queue): Path<String>,
-) -> impl IntoResponse {
-    match state.inspector.unpause_queue(&queue).await {
-        Ok(_) => (
-            StatusCode::OK,
-            Json(ApiResponse::success("Resumed".to_string())),
-        ),
-        Err(e) => (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            Json(ApiResponse::<String>::error(e)),
-        ),
+    state: web::Data<AppState>,
+    path: web::Path<String>,
+) -> Result<HttpResponse> {
+    match state.inspector.unpause_queue(&path).await {
+        Ok(_) => Ok(HttpResponse::Ok().json(ApiResponse::success("Resumed".to_string()))),
+        Err(e) => Ok(HttpResponse::InternalServerError().json(ApiResponse::<String>::error(e))),
     }
 }

@@ -114,7 +114,7 @@ let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
 
 The members binary consists of:
 
-1. **API Layer** (`api.rs`) - REST API handlers using Axum framework
+1. **API Layer** (`api.rs`) - REST API handlers using Actix-web framework
 2. **Inspector Service** (`inspector_service.rs`) - Wrapper around Asynq Inspector API
 3. **Web UI** (`static/index.html`) - Single-page application with vanilla HTML/CSS/JavaScript
 
@@ -170,5 +170,5 @@ This project is licensed under the same terms as the asynq library (MIT OR GPL-3
 ## Acknowledgments
 
 - Inspired by [@hibiken/asynqmon](https://github.com/hibiken/asynqmon)
-- Built with [Axum](https://github.com/tokio-rs/axum) web framework
+- Built with [Actix-web](https://actix.rs/) web framework
 - Uses the [Asynq](https://github.com/cn-kali-team/asynq) Rust library
