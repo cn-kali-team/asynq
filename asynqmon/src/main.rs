@@ -10,6 +10,7 @@ use tracing_subscriber;
 
 mod api;
 mod inspector_service;
+pub mod ui;
 
 use inspector_service::InspectorService;
 
@@ -55,6 +56,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors)
             .app_data(web::Data::new(state.clone()))
             .route("/", web::get().to(index_handler))
+            .route("/dioxus", web::get().to(dioxus_handler))
             .route("/api/queues", web::get().to(api::get_queues))
             .route("/api/queue/{name}", web::get().to(api::get_queue_info))
             .route("/api/servers", web::get().to(api::get_servers))
@@ -73,4 +75,11 @@ async fn index_handler() -> Result<HttpResponse> {
     Ok(HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
         .body(include_str!("../static/index.html")))
+}
+
+/// Dioxus version handler (for future WebAssembly deployment)
+async fn dioxus_handler() -> Result<HttpResponse> {
+    Ok(HttpResponse::Ok()
+        .content_type("text/html; charset=utf-8")
+        .body(include_str!("../static/dioxus.html")))
 }
