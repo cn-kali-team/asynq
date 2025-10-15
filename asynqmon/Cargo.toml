@@ -1,5 +1,5 @@
 [package]
-name = "members"
+name = "asynqmon"
 version = "0.1.0"
 homepage.workspace = true
 repository.workspace = true
@@ -9,12 +9,12 @@ authors.workspace = true
 description = "Asynq task control panel with Dioxus UI - supports web interface"
 
 [[bin]]
-name = "members"
+name = "asynqmon"
 path = "src/main.rs"
 
 [dependencies]
 # Core dependencies
-asynq = { path = "../asynq", features = ["json"] }
+asynq = { version = "0.1.2", features = ["json"] }
 tokio = { version = "1.0", features = ["full"] }
 
 # UI framework - Dioxus web

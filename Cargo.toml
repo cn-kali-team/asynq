@@ -2,8 +2,9 @@
 resolver = "2"
 members = [
     "asynq",
-    "asynq-macros"
-, "members"]
+    "asynq-macros",
+    "asynqmon",
+]
 [workspace.package]
 homepage = "https://github.com/emo-crab/asynq"
 repository = "https://github.com/emo-crab/asynq"
