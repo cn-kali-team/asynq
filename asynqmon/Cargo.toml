@@ -6,7 +6,7 @@ repository.workspace = true
 license.workspace = true
 edition.workspace = true
 authors.workspace = true
-description = "Asynq task control panel with Dioxus UI - supports web interface"
+description = "Asynq task control panel with Actix-web backend and Dioxus UI - supports web interface"
 
 [[bin]]
 name = "asynqmon"
@@ -18,12 +18,13 @@ asynq = { version = "0.1.2", features = ["json"] }
 tokio = { version = "1.0", features = ["full"] }
 
 # UI framework - Dioxus web
-dioxus = { version = "0.6" }
+dioxus = { version = "0.6", features = ["web"] }
+dioxus-web = { version = "0.6" }
 
-# Web server
-axum = "0.8"
-tower = "0.5"
-tower-http = { version = "0.6", features = ["fs", "cors"] }
+# Web server - Actix-web
+actix-web = "4"
+actix-cors = "0.7"
+actix-files = "0.6"
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
@@ -35,6 +36,7 @@ async-trait = "0.1"
 # Logging
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+tracing-actix-web = "0.7"
 
 # Time handling
 chrono = { version = "0.4", features = ["serde"], default-features = false }

@@ -21,19 +21,19 @@ Asynq Members is a web-based task control panel for monitoring and managing Asyn
 ### Building
 
 ```bash
-cargo build --bin members --release
+cargo build --bin asynqmon --release
 ```
 
 ### Running
 
 ```bash
-cargo run --bin members
+cargo run --bin asynqmon
 ```
 
 Or run the release binary directly:
 
 ```bash
-./target/release/members
+./target/release/asynqmon
 ```
 
 The web interface will be available at: **http://127.0.0.1:8080**
@@ -112,11 +112,12 @@ let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
 
 ## Architecture
 
-The members binary consists of:
+The asynqmon binary consists of:
 
-1. **API Layer** (`api.rs`) - REST API handlers using Axum framework
+1. **API Layer** (`api.rs`) - REST API handlers using Actix-web framework
 2. **Inspector Service** (`inspector_service.rs`) - Wrapper around Asynq Inspector API
 3. **Web UI** (`static/index.html`) - Single-page application with vanilla HTML/CSS/JavaScript
+4. **Dioxus UI** (`ui.rs`) - Modular Dioxus components for building reactive UIs (ready for WebAssembly deployment)
 
 ## Comparison with asynqmon
 
@@ -147,21 +148,45 @@ This implementation provides similar functionality to the Go-based asynqmon but 
 ### Project Structure
 
 ```
-members/
+asynqmon/
 ├── src/
 │   ├── main.rs              # Entry point and server setup
 │   ├── api.rs               # REST API handlers
-│   └── inspector_service.rs # Inspector service wrapper
+│   ├── inspector_service.rs # Inspector service wrapper
+│   └── ui.rs                # Dioxus UI components (for WebAssembly)
 └── static/
-    └── index.html           # Web UI (HTML/CSS/JavaScript)
+    ├── index.html           # Web UI (HTML/CSS/JavaScript)
+    └── dioxus.html          # Entry point for Dioxus WebAssembly app
 ```
 
 ### Adding New Features
 
 1. Add API endpoints in `api.rs`
 2. Add Inspector methods in `inspector_service.rs` if needed
-3. Update the UI in `static/index.html`
-4. Register new routes in `main.rs`
+3. Update the UI in `static/index.html` for vanilla JS version
+4. Update Dioxus components in `ui.rs` for reactive version
+5. Register new routes in `main.rs`
+
+### Dioxus UI Components
+
+The project includes Dioxus UI components in `ui.rs` that demonstrate how to build reactive interfaces with Dioxus. These components include:
+
+- `App` - Main application component
+- `Header` - Application header with branding
+- `ConnectionDialog` - Redis connection interface
+- `Dashboard` - Main dashboard view
+- `ServerCard` - Server information card
+- `QueueCard` - Queue statistics card
+
+The Dioxus components can be compiled to WebAssembly for deployment in modern browsers. To build the WebAssembly version:
+
+```bash
+# Install dioxus-cli
+cargo install dioxus-cli
+
+# Build the WebAssembly app
+dx build --release
+```
 
 ## License
 
@@ -170,5 +195,6 @@ This project is licensed under the same terms as the asynq library (MIT OR GPL-3
 ## Acknowledgments
 
 - Inspired by [@hibiken/asynqmon](https://github.com/hibiken/asynqmon)
-- Built with [Axum](https://github.com/tokio-rs/axum) web framework
+- Built with [Actix-web](https://actix.rs/) web framework
+- UI built with [Dioxus](https://dioxuslabs.com/) reactive framework
 - Uses the [Asynq](https://github.com/cn-kali-team/asynq) Rust library

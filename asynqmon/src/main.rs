@@ -1,19 +1,16 @@
 //! Asynq Members - Task Control Panel
 //!
 //! A task control panel UI built with Dioxus, inspired by @hibiken/asynqmon.
-//! This version provides a web interface.
+//! This version provides a web interface with actix-web backend.
 
-use axum::{
-    response::{Html, IntoResponse},
-    routing::get,
-    Router,
-};
-use std::net::SocketAddr;
+use actix_web::{web, App, HttpResponse, HttpServer, Result};
+use actix_cors::Cors;
 use std::sync::Arc;
 use tracing_subscriber;
 
 mod api;
 mod inspector_service;
+pub mod ui;
 
 use inspector_service::InspectorService;
 
@@ -23,8 +20,8 @@ pub struct AppState {
     pub inspector: Arc<InspectorService>,
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+#[actix_web::main]
+async fn main() -> std::io::Result<()> {
     // Initialize logging
     tracing_subscriber::fmt::init();
 
@@ -45,33 +42,44 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create app state
     let state = AppState { inspector };
 
-    // Build our application with routes
-    let app = Router::new()
-        .route("/", get(index_handler))
-        .route("/api/queues", get(api::get_queues))
-        .route("/api/queue/{name}", get(api::get_queue_info))
-        .route("/api/servers", get(api::get_servers))
-        .route("/api/tasks/{queue}/{state}", get(api::get_tasks))
-        .route("/api/connect", axum::routing::post(api::connect))
-        .route("/api/pause/{queue}", axum::routing::post(api::pause_queue))
-        .route(
-            "/api/unpause/{queue}",
-            axum::routing::post(api::unpause_queue),
-        )
-        .with_state(state);
-
-    // Run it
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
-    tracing::info!("🚀 Web interface available at http://{}", addr);
+    tracing::info!("🚀 Web interface available at http://127.0.0.1:8080");
     tracing::info!("📊 Open http://127.0.0.1:8080 in your browser");
 
-    let listener = tokio::net::TcpListener::bind(&addr).await?;
-    axum::serve(listener, app).await?;
+    // Start HTTP server
+    HttpServer::new(move || {
+        let cors = Cors::default()
+            .allow_any_origin()
+            .allow_any_method()
+            .allow_any_header();
 
-    Ok(())
+        App::new()
+            .wrap(cors)
+            .app_data(web::Data::new(state.clone()))
+            .route("/", web::get().to(index_handler))
+            .route("/dioxus", web::get().to(dioxus_handler))
+            .route("/api/queues", web::get().to(api::get_queues))
+            .route("/api/queue/{name}", web::get().to(api::get_queue_info))
+            .route("/api/servers", web::get().to(api::get_servers))
+            .route("/api/tasks/{queue}/{state}", web::get().to(api::get_tasks))
+            .route("/api/connect", web::post().to(api::connect))
+            .route("/api/pause/{queue}", web::post().to(api::pause_queue))
+            .route("/api/unpause/{queue}", web::post().to(api::unpause_queue))
+    })
+    .bind(("127.0.0.1", 8080))?
+    .run()
+    .await
 }
 
-/// Index handler that serves the HTML page
-async fn index_handler() -> impl IntoResponse {
-    Html(include_str!("../static/index.html"))
+/// Index handler that serves the Dioxus app
+async fn index_handler() -> Result<HttpResponse> {
+    Ok(HttpResponse::Ok()
+        .content_type("text/html; charset=utf-8")
+        .body(include_str!("../static/index.html")))
+}
+
+/// Dioxus version handler (for future WebAssembly deployment)
+async fn dioxus_handler() -> Result<HttpResponse> {
+    Ok(HttpResponse::Ok()
+        .content_type("text/html; charset=utf-8")
+        .body(include_str!("../static/dioxus.html")))
 }
